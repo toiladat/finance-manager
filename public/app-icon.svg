@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <!-- Background OLED Squircle -->
+  <rect width="512" height="512" rx="114" fill="#0C0C0E" />
+  
+  <!-- Subtle Gradient Background Depth -->
+  <radialGradient id="bgGlow" cx="50%" cy="40%" r="60%">
+    <stop offset="0%" stop-color="#22222B" stop-opacity="0.8" />
+    <stop offset="100%" stop-color="#0A0A0D" stop-opacity="1" />
+  </radialGradient>
+  <rect width="512" height="512" rx="114" fill="url(#bgGlow)" />
+  
+  <!-- Hairline Border -->
+  <rect x="1" y="1" width="510" height="510" rx="113" stroke="rgba(255,255,255,0.12)" stroke-width="2" />
+
+  <!-- Outer Golden Lens Ring -->
+  <circle cx="256" cy="256" r="160" fill="#141418" stroke="url(#goldRing)" stroke-width="12" />
+  
+  <linearGradient id="goldRing" x1="120" y1="120" x2="390" y2="390" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#FFE885" />
+    <stop offset="50%" stop-color="#FFB800" />
+    <stop offset="100%" stop-color="#E68A00" />
+  </linearGradient>
+
+  <!-- Inner Shutter Frame -->
+  <circle cx="256" cy="256" r="126" fill="#1A1A22" stroke="rgba(255,255,255,0.08)" stroke-width="4" />
+  
+  <!-- Camera Lens Core -->
+  <radialGradient id="lensCore" cx="45%" cy="40%" r="55%">
+    <stop offset="0%" stop-color="#2A2A38" />
+    <stop offset="70%" stop-color="#0E0E14" />
+    <stop offset="100%" stop-color="#050508" />
+  </radialGradient>
+  <circle cx="256" cy="256" r="100" fill="url(#lensCore)" />
+
+  <!-- Golden Locket Sparkle / Aperture Star -->
+  <path d="M256 186 C256 226, 226 256, 186 256 C226 256, 256 286, 256 326 C256 286, 286 256, 326 256 C286 256, 256 226, 256 186 Z" fill="url(#sparkleGrad)" />
+  
+  <linearGradient id="sparkleGrad" x1="186" y1="186" x2="326" y2="326" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#FFFFFF" />
+    <stop offset="40%" stop-color="#FFE066" />
+    <stop offset="100%" stop-color="#FF9F0A" />
+  </linearGradient>
+  
+  <!-- Lens Flare Reflection -->
+  <ellipse cx="220" cy="210" rx="36" ry="18" fill="white" fill-opacity="0.16" transform="rotate(-35 220 210)" />
+</svg>
