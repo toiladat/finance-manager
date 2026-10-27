@@ -4,6 +4,9 @@ import { X, ChevronRight, Sparkles, ArrowUpRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { Transaction, Category } from '../../../types';
 import { useMonthlyRecapStats } from '../hooks/useMonthlyRecapStats';
+import { useCategoryBudgets } from '../hooks/useCategoryBudgets';
+import { CategoryDonutChart } from './CategoryDonutChart';
+import { CategoryBudgetCard } from './CategoryBudgetCard';
 
 interface MonthlyRecapModalProps {
   isOpen: boolean;
@@ -20,6 +23,7 @@ export const MonthlyRecapModal: React.FC<MonthlyRecapModalProps> = ({
   categories,
 }) => {
   const [slideIndex, setSlideIndex] = useState(0);
+  const [chartViewMode, setChartViewMode] = useState<'donut' | 'budgets'>('donut');
 
   const {
     availableMonths,
@@ -44,9 +48,15 @@ export const MonthlyRecapModal: React.FC<MonthlyRecapModalProps> = ({
     formatDateVi,
   } = useMonthlyRecapStats({ transactions, categories });
 
-  // Trigger confetti on final slide
+  const categoryBudgets = useCategoryBudgets({
+    transactions,
+    categories,
+    monthKey: activeMonthKey,
+  });
+
+  // Trigger confetti on final slide (slide 5)
   useEffect(() => {
-    if (isOpen && slideIndex === 4) {
+    if (isOpen && slideIndex === 5) {
       confetti({
         particleCount: 70,
         spread: 80,
@@ -57,7 +67,7 @@ export const MonthlyRecapModal: React.FC<MonthlyRecapModalProps> = ({
 
   if (!isOpen) return null;
 
-  const totalSlides = 5;
+  const totalSlides = 6;
 
   const handleNext = () => {
     if (slideIndex < totalSlides - 1) setSlideIndex((prev) => prev + 1);
@@ -99,7 +109,7 @@ export const MonthlyRecapModal: React.FC<MonthlyRecapModalProps> = ({
         </button>
 
         {/* Slide Content Area */}
-        <div className="relative w-full max-w-sm h-full flex flex-col items-center justify-center px-5 pt-[calc(env(safe-area-inset-top,0px)+55px)] pb-[calc(env(safe-area-inset-bottom,0px)+30px)] text-center">
+        <div className="relative z-30 pointer-events-auto w-full max-w-sm h-full flex flex-col items-center justify-center px-5 pt-[calc(env(safe-area-inset-top,0px)+55px)] pb-[calc(env(safe-area-inset-bottom,0px)+30px)] text-center">
           {/* =========================================================
               SLIDE 0: TỔNG QUAN - PHOTO STACK FAN-OUT CHUẨN LOCKET
               ========================================================= */}
@@ -360,11 +370,71 @@ export const MonthlyRecapModal: React.FC<MonthlyRecapModalProps> = ({
           )}
 
           {/* =========================================================
-              SLIDE 4: TẤM VÉ TỔNG KẾT (LOCKET PASS / VINTAGE RECEIPT)
+              SLIDE 4: BIỂU ĐỒ & HẠN MỨC DANH MỤC
               ========================================================= */}
           {slideIndex === 4 && (
             <motion.div
               key="slide-4"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="flex flex-col items-center w-full max-h-[72vh] overflow-y-auto no-scrollbar z-30 pointer-events-auto"
+            >
+              <span className="text-[11px] font-bold text-white/40 tracking-[0.25em] uppercase mb-2">
+                BIỂU ĐỒ & HẠN MỨC
+              </span>
+
+              {/* Segmented switcher giữa Donut và Hạn mức */}
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex p-1 bg-white/[0.08] backdrop-blur-md rounded-full border border-white/10 mb-2 z-30"
+              >
+                <button
+                  onClick={() => setChartViewMode('donut')}
+                  className={`px-3 py-1 rounded-full text-[12px] font-bold transition-all ${
+                    chartViewMode === 'donut'
+                      ? 'bg-white text-black shadow-md'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  Tỷ trọng chi tiêu
+                </button>
+                <button
+                  onClick={() => setChartViewMode('budgets')}
+                  className={`px-3 py-1 rounded-full text-[12px] font-bold flex items-center gap-1.5 transition-all ${
+                    chartViewMode === 'budgets'
+                      ? 'bg-white text-black shadow-md'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  <span>Hạn mức tháng</span>
+                  {categoryBudgets.warningCount > 0 && (
+                    <span className="w-2 h-2 rounded-full bg-[#FF9F0A]" />
+                  )}
+                </button>
+              </div>
+
+              {/* Chart View Content */}
+              <div onClick={(e) => e.stopPropagation()} className="w-full">
+                {chartViewMode === 'donut' ? (
+                  <CategoryDonutChart
+                    items={categoryBudgets.items}
+                    totalSpent={categoryBudgets.totalMonthSpent}
+                  />
+                ) : (
+                  <CategoryBudgetCard items={categoryBudgets.items} />
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* =========================================================
+              SLIDE 5: TẤM VÉ TỔNG KẾT (LOCKET PASS / VINTAGE RECEIPT)
+              ========================================================= */}
+          {slideIndex === 5 && (
+            <motion.div
+              key="slide-5"
               initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.05 }}

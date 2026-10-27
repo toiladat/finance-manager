@@ -11,6 +11,7 @@ interface QuickCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
   categories: Category[];
+  transactions: Transaction[];
   initialDate?: string;
   onSaveTransaction: (tx: Omit<Transaction, 'id' | 'timestamp'>) => Promise<void>;
 }
@@ -19,6 +20,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
   isOpen,
   onClose,
   categories,
+  transactions,
   initialDate,
   onSaveTransaction,
 }) => {
@@ -225,6 +227,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               selectedCategoryId={selectedCategoryId}
               note={note}
               categories={categories}
+              transactions={transactions}
               isSubmitting={isSubmitting}
               onRetakePhoto={() => setPhotoPreview(null)}
               onChangeAmount={(val) => setRawAmount(val.replace(/\D/g, ''))}

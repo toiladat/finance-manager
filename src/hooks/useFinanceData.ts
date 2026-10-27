@@ -254,6 +254,11 @@ export function useFinanceData() {
     setCategories((prev) => [...prev, newCat]);
   };
 
+  const handleUpdateCategory = async (updatedCat: Category) => {
+    await saveCategory(updatedCat);
+    setCategories((prev) => prev.map((c) => (c.id === updatedCat.id ? updatedCat : c)));
+  };
+
   const handleDeleteCategory = async (id: string) => {
     await deleteCategoryAndUnbind(id);
     setCategories((prev) => prev.filter((c) => c.id !== id));
@@ -321,6 +326,7 @@ export function useFinanceData() {
     handleSaveTransaction,
     handleDeleteTransaction,
     handleAddCategory,
+    handleUpdateCategory,
     handleDeleteCategory,
     handleExportData,
     handleImportData,

@@ -1,7 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, PenLine, Check } from 'lucide-react';
-import type { Category } from '../../../types';
+import type { Category, Transaction } from '../../../types';
+import { useCategoryBudgetAlert } from '../hooks/useCategoryBudgetAlert';
+import { BudgetAlertBadge } from './BudgetAlertBadge';
 
 interface ExpenseFormViewProps {
   photoPreview: string;
@@ -9,6 +11,7 @@ interface ExpenseFormViewProps {
   selectedCategoryId: string | null;
   note: string;
   categories: Category[];
+  transactions: Transaction[];
   isSubmitting: boolean;
   onRetakePhoto: () => void;
   onChangeAmount: (val: string) => void;
@@ -23,6 +26,7 @@ export const ExpenseFormView: React.FC<ExpenseFormViewProps> = ({
   selectedCategoryId,
   note,
   categories,
+  transactions,
   isSubmitting,
   onRetakePhoto,
   onChangeAmount,
@@ -30,6 +34,13 @@ export const ExpenseFormView: React.FC<ExpenseFormViewProps> = ({
   onChangeNote,
   onSubmit,
 }) => {
+  const alertInfo = useCategoryBudgetAlert({
+    categoryId: selectedCategoryId,
+    rawAmount,
+    transactions,
+    categories,
+  });
+
   const formatDisplayAmount = (str: string) => {
     const num = parseInt(str.replace(/\D/g, '') || '0', 10);
     return num === 0 ? '' : new Intl.NumberFormat('vi-VN').format(num);
@@ -132,8 +143,11 @@ export const ExpenseFormView: React.FC<ExpenseFormViewProps> = ({
           })}
       </div>
 
+      {/* Cảnh báo ngân sách chạm 80% / 100% */}
+      <BudgetAlertBadge alertInfo={alertInfo} />
+
       {/* Nút lưu chi tiêu */}
-      <div className="pt-2 pb-[max(8px,env(safe-area-inset-bottom,8px))]">
+      <div className="pt-1 pb-[max(8px,env(safe-area-inset-bottom,8px))]">
         <motion.button
           whileTap={{ scale: 0.97 }}
           disabled={isSubmitting || !isAmountValid}

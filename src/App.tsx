@@ -136,6 +136,7 @@ export function App() {
         isOpen={isQuickCaptureOpen}
         onClose={() => setIsQuickCaptureOpen(false)}
         categories={finance.categories}
+        transactions={finance.transactions}
         initialDate={quickCaptureDate}
         onSaveTransaction={finance.handleSaveTransaction}
       />
@@ -154,7 +155,9 @@ export function App() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         categories={finance.categories}
+        transactions={finance.transactions}
         onAddCategory={finance.handleAddCategory}
+        onUpdateCategory={finance.handleUpdateCategory}
         onDeleteCategory={finance.handleDeleteCategory}
         onExportData={finance.handleExportData}
         onImportData={finance.handleImportData}

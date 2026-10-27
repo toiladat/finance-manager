@@ -7,6 +7,7 @@ export interface Category {
   icon: string; // Lucide icon name or emoji
   color: string; // Hex color
   isDefault?: boolean;
+  monthlyBudget?: number; // Hạn mức chi tiêu tối đa trong 1 tháng (VNĐ)
 }
 
 export interface Transaction {

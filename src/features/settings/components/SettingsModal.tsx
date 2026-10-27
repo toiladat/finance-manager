@@ -1,14 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Trash2, Download, Upload, RotateCcw, Camera, User, Tag, HardDrive } from 'lucide-react';
-import type { Category, UserProfile } from '../../../types';
+import type { Category, UserProfile, Transaction } from '../../../types';
 import { compressImageToWebP } from '../../../services/db';
+import { CategoryListItem } from './CategoryListItem';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   categories: Category[];
+  transactions?: Transaction[];
   onAddCategory: (cat: Omit<Category, 'id'>) => Promise<void>;
+  onUpdateCategory?: (cat: Category) => Promise<void>;
   onDeleteCategory: (id: string) => Promise<void>;
   onExportData: () => Promise<void>;
   onImportData: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
@@ -21,7 +24,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   categories,
+  transactions = [],
   onAddCategory,
+  onUpdateCategory = async () => {},
   onDeleteCategory,
   onExportData,
   onImportData,
@@ -31,6 +36,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [newCatName, setNewCatName] = useState('');
   const [newCatColor, setNewCatColor] = useState('#0A84FF');
+  const [newCatBudget, setNewCatBudget] = useState('');
   const [activeTab, setActiveTab] = useState<'categories' | 'profile' | 'backup'>('categories');
 
   // Profile edit state
@@ -38,18 +44,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [editAvatar, setEditAvatar] = useState(userProfile.avatarUrl);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const categorySpentMap = React.useMemo(() => {
+    const map = new Map<string, number>();
+    transactions
+      .filter((t) => t.date.startsWith(currentMonthKey) && t.type === 'EXPENSE')
+      .forEach((t) => {
+        const k = t.categoryId || 'unknown';
+        map.set(k, (map.get(k) || 0) + t.amount);
+      });
+    return map;
+  }, [transactions, currentMonthKey]);
+
   if (!isOpen) return null;
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
+    const parsedBudget = parseInt(newCatBudget.replace(/\D/g, '') || '0', 10);
     await onAddCategory({
       name: newCatName.trim(),
       type: 'EXPENSE',
       icon: 'Tag',
       color: newCatColor,
+      monthlyBudget: parsedBudget > 0 ? parsedBudget : undefined,
     });
     setNewCatName('');
+    setNewCatBudget('');
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,7 +167,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* TAB 1: DANH MỤC */}
             {activeTab === 'categories' && (
               <>
-                {/* Form thêm danh mục tinh gọn */}
+                {/* Form thêm danh mục tinh gọn có hạn mức */}
                 <form onSubmit={handleCreateCategory} className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 space-y-3">
                   <div className="flex gap-2">
                     <input
@@ -154,65 +175,72 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       placeholder="Tên danh mục..."
                       value={newCatName}
                       onChange={(e) => setNewCatName(e.target.value)}
-                      className="flex-1 bg-black/40 px-3.5 py-2 rounded-full text-[13px] text-white border border-white/10 outline-none placeholder:text-white/30 focus:border-white/25"
+                      className="flex-1 min-w-0 bg-black/40 px-3.5 py-2 rounded-full text-[13px] text-white border border-white/10 outline-none placeholder:text-white/30 focus:border-white/25"
+                    />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Hạn mức/tháng..."
+                      value={newCatBudget ? new Intl.NumberFormat('vi-VN').format(parseInt(newCatBudget.replace(/\D/g, '') || '0', 10)) + '₫' : ''}
+                      onChange={(e) => setNewCatBudget(e.target.value.replace(/\D/g, ''))}
+                      className="w-[125px] bg-black/40 px-3 py-2 rounded-full text-[12px] text-white border border-white/10 outline-none placeholder:text-white/30 focus:border-white/25 tabular-nums"
                     />
                     <button
                       type="submit"
                       disabled={!newCatName.trim()}
-                      className="px-4 py-2 rounded-full bg-ios-blue text-white text-[12px] font-semibold flex items-center gap-1 shadow-sm disabled:opacity-40 hover:bg-ios-blue/90 transition-all"
+                      className="px-3.5 py-2 rounded-full bg-ios-blue text-white text-[12px] font-semibold flex items-center justify-center shadow-sm disabled:opacity-40 hover:bg-ios-blue/90 transition-all flex-shrink-0"
                     >
                       <Plus className="w-4 h-4 stroke-[2.5]" />
                     </button>
                   </div>
 
-                  {/* Preset colors */}
-                  <div className="flex items-center gap-2 px-1">
-                    {PRESET_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setNewCatColor(c)}
-                        className={`w-5 h-5 rounded-full border-2 transition-transform ${
-                          newCatColor === c ? 'scale-125 border-white shadow-sm' : 'border-transparent'
-                        }`}
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
+                  {/* Preset budget pills & Preset colors */}
+                  <div className="flex items-center justify-between gap-1 pt-0.5 text-[11px]">
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                      <span className="text-white/35 text-[10px]">Hạn mức:</span>
+                      {['1000000', '2000000', '5000000'].map((amt) => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => setNewCatBudget(amt)}
+                          className="px-2 py-0.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-white/60 hover:text-white transition-colors text-[10px]"
+                        >
+                          {amt === '1000000' ? '1M' : amt === '2000000' ? '2M' : '5M'}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {PRESET_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setNewCatColor(c)}
+                          className={`w-4 h-4 rounded-full border-2 transition-transform ${
+                            newCatColor === c ? 'scale-125 border-white shadow-sm' : 'border-transparent'
+                          }`}
+                          style={{ backgroundColor: c }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </form>
 
-                {/* Danh sách danh mục sạch sẽ, bỏ chữ Chi */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between px-1 pb-1">
+                {/* Danh sách danh mục với thanh đo tiến độ hạn mức */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1 pb-0.5">
                     <span className="text-[12px] font-medium text-white/50">
                       Danh sách ({categories.length})
                     </span>
                   </div>
                   {categories.map((cat) => (
-                    <div
+                    <CategoryListItem
                       key={cat.id}
-                      className="p-2.5 px-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-between hover:bg-white/[0.06] transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm"
-                          style={{ backgroundColor: cat.color }}
-                        />
-                        <span className="text-[13px] font-medium text-white/90">{cat.name}</span>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          if (confirm(`Xóa danh mục "${cat.name}"?`)) {
-                            onDeleteCategory(cat.id);
-                          }
-                        }}
-                        className="p-1.5 text-white/30 hover:text-ios-red transition-colors"
-                        title="Xóa danh mục"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                      category={cat}
+                      monthSpent={categorySpentMap.get(cat.id) || 0}
+                      onDelete={onDeleteCategory}
+                      onUpdateCategory={onUpdateCategory}
+                    />
                   ))}
                 </div>
               </>
