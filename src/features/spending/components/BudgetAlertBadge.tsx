@@ -15,7 +15,13 @@ export const BudgetAlertBadge: React.FC<BudgetAlertBadgeProps> = ({ alertInfo })
   if (status === 'NONE') return null;
 
   const isExceeded = status === 'EXCEEDED_100';
-  const accentColor = isExceeded ? '#FF453A' : categoryColor || '#0A84FF';
+  const isWarning = status === 'WARNING_80';
+
+  const accentColor = isExceeded
+    ? '#FF453A'
+    : isWarning
+    ? '#FF9F0A'
+    : categoryColor || '#34C759';
 
   return (
     <AnimatePresence>
@@ -30,7 +36,15 @@ export const BudgetAlertBadge: React.FC<BudgetAlertBadgeProps> = ({ alertInfo })
           <span className="font-medium text-white/80 truncate">{categoryName}</span>
 
           <div className="flex items-baseline gap-1 tabular-nums flex-shrink-0">
-            <span className={`font-bold ${isExceeded ? 'text-[#FF453A]' : 'text-white'}`}>
+            <span
+              className={`font-bold ${
+                isExceeded
+                  ? 'text-[#FF453A]'
+                  : isWarning
+                  ? 'text-[#FF9F0A]'
+                  : 'text-white'
+              }`}
+            >
               {formatNum(projectedTotal)}
             </span>
             <span className="text-[#8E8E93]">/ {formatNum(budget)}₫</span>

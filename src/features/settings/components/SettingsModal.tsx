@@ -24,7 +24,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   categories,
-  transactions = [],
   onAddCategory,
   onUpdateCategory = async () => {},
   onDeleteCategory,
@@ -111,7 +110,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {activeTab === 'categories' && (
               <CategorySettingsTab
                 categories={categories}
-                transactions={transactions}
                 onAddCategory={onAddCategory}
                 onUpdateCategory={onUpdateCategory}
                 onDeleteCategory={onDeleteCategory}

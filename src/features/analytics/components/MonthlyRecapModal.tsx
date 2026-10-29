@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import type { Transaction, Category } from '../../../types';
 import { useMonthlyRecapStats } from '../hooks/useMonthlyRecapStats';
 import { useCategoryBudgets } from '../hooks/useCategoryBudgets';
-import { CategoryDonutChart } from './CategoryDonutChart';
+import { CategoryBreakdown } from './CategoryBreakdown';
 import { RecapStorySlides } from './RecapStorySlides';
 import { RecapPassSlide } from './RecapPassSlide';
 
@@ -143,10 +143,11 @@ export const MonthlyRecapModal: React.FC<MonthlyRecapModalProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-              className="flex flex-col items-center w-full"
+              className="flex flex-col w-full h-full"
             >
-              <CategoryDonutChart
+              <CategoryBreakdown
                 items={categoryBudgets.items}
+                dailySpending={categoryBudgets.dailySpending}
                 totalSpent={categoryBudgets.totalMonthSpent}
                 monthLabel={stats.currentMonthName}
               />

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Category, Transaction } from '../../../types';
+import { buildDailySpending } from '../utils/dailySpending';
 
 export interface CategoryBudgetItem {
   category: Category;
@@ -128,6 +129,11 @@ export function useCategoryBudgets({
 
     const totalBudget = items.reduce((sum, item) => sum + item.budget, 0);
     const warningCount = items.filter((i) => i.isWarning80 || i.isExceeded100).length;
+    const dailySpending = buildDailySpending({
+      expenses: monthExpenses,
+      monthKey,
+      totalDays: totalDaysInMonth,
+    });
 
     return {
       items,
@@ -135,6 +141,7 @@ export function useCategoryBudgets({
       totalBudget,
       daysRemaining,
       warningCount,
+      dailySpending,
     };
   }, [transactions, categories, monthKey]);
 }
