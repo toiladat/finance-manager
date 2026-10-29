@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Download, Upload, RotateCcw, Camera, User, Tag, HardDrive } from 'lucide-react';
+import { X, Trash2, Download, Upload, Camera, User, Tag, HardDrive } from 'lucide-react';
 import type { Category, UserProfile, Transaction } from '../../../types';
 import { compressImageToWebP } from '../../../services/db';
 import { CategorySettingsTab } from './CategorySettingsTab';
@@ -24,6 +24,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   categories,
+  transactions = [],
   onAddCategory,
   onUpdateCategory = async () => {},
   onDeleteCategory,
@@ -110,6 +111,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {activeTab === 'categories' && (
               <CategorySettingsTab
                 categories={categories}
+                transactions={transactions}
                 onAddCategory={onAddCategory}
                 onUpdateCategory={onUpdateCategory}
                 onDeleteCategory={onDeleteCategory}
@@ -144,46 +146,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             )}
 
             {activeTab === 'backup' && (
-              <div className="space-y-3">
-                <div className="p-4 rounded-[20px] bg-[#18181D] border border-white/[0.07] space-y-2">
-                  <span className="text-[13px] font-semibold text-white block">Sao lưu & Khôi phục</span>
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <button
-                      onClick={onExportData}
-                      className="py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-[12px] font-semibold flex items-center justify-center gap-1.5 border border-white/10 transition-all active:scale-96"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Tải sao lưu</span>
-                    </button>
-                    <label className="py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-[12px] font-semibold flex items-center justify-center gap-1.5 border border-white/10 cursor-pointer transition-all active:scale-96">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Khôi phục</span>
-                      <input type="file" accept=".json" onChange={onImportData} className="hidden" />
-                    </label>
-                  </div>
-                </div>
+              <div className="rounded-[20px] bg-[#18181D] border border-white/[0.07] overflow-hidden divide-y divide-white/[0.06]">
+                <button
+                  onClick={onExportData}
+                  className="w-full px-4 py-3.5 text-left text-[14px] font-medium text-white flex items-center justify-between hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
+                >
+                  <span>Sao lưu dữ liệu</span>
+                  <Download className="w-4 h-4 text-[#8E8E93]" />
+                </button>
 
-                <div className="p-4 rounded-[20px] bg-[#18181D] border border-white/[0.07] space-y-2">
-                  <div className="flex items-center gap-2 text-[#FF453A]">
-                    <Trash2 className="w-4 h-4" />
-                    <span className="text-[13px] font-semibold">Xóa sạch toàn bộ dữ liệu</span>
-                  </div>
-                  <p className="text-[12px] text-[#8E8E93] leading-relaxed">
-                    Xóa toàn bộ các khoản chi tiêu và ảnh đã ghi để bắt đầu lại từ đầu.
-                  </p>
-                  <button
-                    onClick={() => {
-                      if (confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu để bắt đầu sổ mới?')) {
-                        onResetSampleData();
-                        onClose();
-                      }
-                    }}
-                    className="w-full py-2.5 rounded-full bg-[#FF453A]/15 text-[#FF453A] text-[13px] font-semibold flex items-center justify-center gap-2 border border-[#FF453A]/30 mt-2 hover:bg-[#FF453A]/25 transition-all active:scale-96 cursor-pointer"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>Xóa sạch & Bắt đầu lại</span>
-                  </button>
-                </div>
+                <label className="w-full px-4 py-3.5 text-left text-[14px] font-medium text-white flex items-center justify-between hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors cursor-pointer">
+                  <span>Khôi phục dữ liệu</span>
+                  <Upload className="w-4 h-4 text-[#8E8E93]" />
+                  <input type="file" accept=".json" onChange={onImportData} className="hidden" />
+                </label>
+
+                <button
+                  onClick={() => {
+                    if (confirm('Xóa toàn bộ dữ liệu?')) {
+                      onResetSampleData();
+                      onClose();
+                    }
+                  }}
+                  className="w-full px-4 py-3.5 text-left text-[14px] font-medium text-[#FF453A] flex items-center justify-between hover:bg-[#FF453A]/[0.06] active:bg-[#FF453A]/[0.12] transition-colors cursor-pointer"
+                >
+                  <span>Xóa toàn bộ dữ liệu</span>
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>

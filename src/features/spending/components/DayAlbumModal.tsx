@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Sparkles } from 'lucide-react';
+import { X, Camera } from 'lucide-react';
 import type { DaySpendingGroup, Category } from '../../../types';
 import { DayAlbumMemoryCard } from './DayAlbumMemoryCard';
 
@@ -82,10 +82,9 @@ export const DayAlbumModal: React.FC<DayAlbumModalProps> = ({
                   {formatCurrency(dayGroup.totalExpense)}
                 </span>
               </div>
-              <div className="px-3 py-1 rounded-full bg-white/[0.08] border border-white/10 text-[11px] font-semibold text-white/80 flex items-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3 h-3 text-[#FFD60A]" />
-                <span>{dayGroup.transactions.length} khoảnh khắc</span>
-              </div>
+              <span className="text-[12px] font-medium text-[#8E8E93] tabular-nums">
+                {dayGroup.transactions.length} ảnh
+              </span>
             </div>
           </div>
 

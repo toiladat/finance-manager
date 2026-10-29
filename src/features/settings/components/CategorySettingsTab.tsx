@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
-import type { Category } from '../../../types';
+import type { Category, Transaction } from '../../../types';
 import { CategoryListItem } from './CategoryListItem';
 
 interface CategorySettingsTabProps {
   categories: Category[];
+  transactions?: Transaction[];
   onAddCategory: (cat: Omit<Category, 'id'>) => Promise<void>;
   onUpdateCategory: (cat: Category) => Promise<void>;
   onDeleteCategory: (id: string) => Promise<void>;
@@ -22,96 +23,113 @@ const PRESET_COLORS = [
 
 export const CategorySettingsTab: React.FC<CategorySettingsTabProps> = ({
   categories,
+  transactions = [],
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory,
 }) => {
   const [newCatName, setNewCatName] = useState('');
+  const [newCatBudget, setNewCatBudget] = useState('');
   const [newCatColor, setNewCatColor] = useState('#0A84FF');
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const categorySpentMap = useMemo(() => {
+    const map = new Map<string, number>();
+    transactions
+      .filter((t) => t.date.startsWith(currentMonthKey) && t.type === 'EXPENSE')
+      .forEach((t) => {
+        const k = t.categoryId || 'unknown';
+        map.set(k, (map.get(k) || 0) + t.amount);
+      });
+    return map;
+  }, [transactions, currentMonthKey]);
+
+  const formatInputNumber = (val: string) => {
+    const num = parseInt(val.replace(/\D/g, '') || '0', 10);
+    return num > 0 ? new Intl.NumberFormat('vi-VN').format(num) : '';
+  };
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
+    const parsedBudget = parseInt(newCatBudget.replace(/\D/g, '') || '0', 10);
     await onAddCategory({
       name: newCatName.trim(),
       type: 'EXPENSE',
       icon: 'Tag',
       color: newCatColor,
+      monthlyBudget: parsedBudget > 0 ? parsedBudget : undefined,
     });
     setNewCatName('');
+    setNewCatBudget('');
   };
 
   return (
-    <div className="space-y-4">
-      {/* Form tạo danh mục mới tối giản */}
+    <div className="space-y-3">
+      {/* Form thêm danh mục: Không còn các hạn mức cho sẵn 1M/2M/5M */}
       <form
         onSubmit={handleCreateCategory}
-        className="p-3 rounded-[20px] bg-[#18181D] border border-white/[0.07] space-y-2.5"
+        className="p-3.5 rounded-[20px] bg-[#18181D] border border-white/[0.07] space-y-3"
       >
         <div className="flex items-center gap-2">
-          <span
-            className="w-3.5 h-3.5 rounded-full flex-shrink-0 ml-1"
-            style={{ backgroundColor: newCatColor }}
+          <input
+            type="text"
+            placeholder="Tên danh mục"
+            value={newCatName}
+            onChange={(e) => setNewCatName(e.target.value)}
+            className="flex-1 min-w-0 bg-[#0E0E11] px-3.5 py-2 rounded-full text-[13px] text-white border border-white/[0.08] outline-none placeholder:text-white/30 focus:border-white/25"
           />
           <input
             type="text"
-            placeholder="Thêm danh mục mới..."
-            value={newCatName}
-            onChange={(e) => setNewCatName(e.target.value)}
-            className="flex-1 min-w-0 bg-transparent py-1 text-[14px] text-white outline-none placeholder:text-white/30"
+            inputMode="numeric"
+            placeholder="Hạn mức"
+            value={formatInputNumber(newCatBudget)}
+            onChange={(e) => setNewCatBudget(e.target.value.replace(/\D/g, ''))}
+            className="w-28 bg-[#0E0E11] px-3 py-2 rounded-full text-[13px] text-white border border-white/[0.08] outline-none placeholder:text-white/30 focus:border-white/25 tabular-nums"
           />
           <button
             type="submit"
             disabled={!newCatName.trim()}
-            className="px-3.5 py-1.5 rounded-full bg-[#0A84FF] text-white text-[12px] font-semibold flex items-center gap-1 disabled:opacity-30 active:scale-95 transition-all"
+            className="w-9 h-9 rounded-full bg-[#0A84FF] text-white flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all flex-shrink-0"
           >
-            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Thêm</span>
+            <Plus className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
 
-        {/* Bảng màu tinh gọn */}
-        <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] px-1">
-          <span className="text-[11px] text-[#8E8E93]">Màu nhận diện</span>
-          <div className="flex items-center gap-2">
-            {PRESET_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setNewCatColor(c)}
-                className={`w-4 h-4 rounded-full transition-transform ${
-                  newCatColor === c
-                    ? 'scale-125 ring-2 ring-white ring-offset-2 ring-offset-[#18181D]'
-                    : 'opacity-70 hover:opacity-100'
-                }`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </div>
-        </div>
-      </form>
-
-      {/* Danh sách danh mục dạng iOS Inset Grouped List */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">
-            Danh mục ({categories.length})
-          </span>
-          <span className="text-[11px] text-[#8E8E93]">
-            Chạm để đặt hạn mức
-          </span>
-        </div>
-
-        <div className="rounded-[20px] bg-[#18181D] border border-white/[0.07] overflow-hidden">
-          {categories.map((cat) => (
-            <CategoryListItem
-              key={cat.id}
-              category={cat}
-              onDelete={onDeleteCategory}
-              onUpdateCategory={onUpdateCategory}
+        <div className="flex items-center justify-end gap-2.5 pt-1">
+          {PRESET_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setNewCatColor(c)}
+              className={`w-4 h-4 rounded-full transition-transform ${
+                newCatColor === c
+                  ? 'scale-125 ring-2 ring-white ring-offset-2 ring-offset-[#18181D]'
+                  : 'opacity-70 hover:opacity-100'
+              }`}
+              style={{ backgroundColor: c }}
             />
           ))}
         </div>
+      </form>
+
+      {/* Danh sách danh mục */}
+      <div className="space-y-2">
+        {categories.map((cat) => (
+          <CategoryListItem
+            key={cat.id}
+            category={cat}
+            monthSpent={categorySpentMap.get(cat.id) || 0}
+            isEditing={editingCategoryId === cat.id}
+            onToggleEdit={() =>
+              setEditingCategoryId((prev) => (prev === cat.id ? null : cat.id))
+            }
+            onCloseEdit={() => setEditingCategoryId(null)}
+            onDelete={onDeleteCategory}
+            onUpdateCategory={onUpdateCategory}
+          />
+        ))}
       </div>
     </div>
   );

@@ -139,18 +139,16 @@ export const MonthlyRecapModal: React.FC<MonthlyRecapModalProps> = ({
           {slideIndex === 4 && (
             <motion.div
               key="slide-4"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: 'spring', damping: 25 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
               className="flex flex-col items-center w-full"
             >
-              <span className="text-[11px] font-bold text-white/40 tracking-[0.25em] uppercase mb-1">
-                PHÂN BỔ & HẠN MỨC
-              </span>
               <CategoryDonutChart
                 items={categoryBudgets.items}
                 totalSpent={categoryBudgets.totalMonthSpent}
+                monthLabel={stats.currentMonthName}
               />
             </motion.div>
           )}

@@ -1,142 +1,121 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import type { CategoryBudgetItem } from '../hooks/useCategoryBudgets';
 
 interface CategoryDonutChartProps {
   items: CategoryBudgetItem[];
   totalSpent: number;
+  monthLabel?: string;
 }
 
-const formatCompact = (val: number) => {
-  if (val >= 1000000) {
-    const m = val / 1000000;
-    return `${Number.isInteger(m) ? m : m.toFixed(1).replace('.', ',')}tr`;
-  }
-  return val >= 1000 ? `${Math.round(val / 1000)}k` : new Intl.NumberFormat('vi-VN').format(val);
-};
+const formatNum = (val: number) =>
+  new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(val);
 
-const formatFull = (val: number) =>
-  new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(val) + '₫';
-
-export const CategoryDonutChart: React.FC<CategoryDonutChartProps> = ({ items, totalSpent }) => {
+export const CategoryDonutChart: React.FC<CategoryDonutChartProps> = ({
+  items,
+  totalSpent,
+}) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const activeItems = items.filter((i) => i.spent > 0);
   const selectedItem = items.find((i) => i.category.id === selectedId) || null;
 
-  const radius = 64;
-  const strokeWidth = 16;
-  const circumference = 2 * Math.PI * radius;
-
-  let accumulatedRatio = 0;
-  const segments = activeItems.map((item) => {
-    const ratio = totalSpent > 0 ? item.spent / totalSpent : 0;
-    const strokeDasharray = `${Math.max(0, ratio * circumference - 2)} ${circumference}`;
-    const strokeDashoffset = -(accumulatedRatio * circumference);
-    accumulatedRatio += ratio;
-    return { id: item.category.id, color: item.category.color, strokeDasharray, strokeDashoffset };
-  });
-
   return (
-    <div onClick={(e) => e.stopPropagation()} className="flex flex-col items-center w-full pointer-events-auto">
-      {/* Vòng tròn Apple Donut Ring */}
-      <div className="relative w-40 h-40 flex items-center justify-center my-1">
-        <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 160 160">
-          <circle cx="80" cy="80" r={radius} fill="transparent" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
-          {segments.map((seg) => (
-            <circle
-              key={seg.id}
-              cx="80"
-              cy="80"
-              r={radius}
-              fill="transparent"
-              stroke={seg.color}
-              strokeWidth={selectedId === seg.id ? strokeWidth + 3 : strokeWidth}
-              strokeDasharray={seg.strokeDasharray}
-              strokeDashoffset={seg.strokeDashoffset}
-              strokeLinecap="round"
-              className="cursor-pointer transition-all duration-300"
-              style={{ opacity: selectedId === null || selectedId === seg.id ? 1 : 0.25 }}
-              onClick={() => setSelectedId(selectedId === seg.id ? null : seg.id)}
-            />
-          ))}
-        </svg>
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-3">
-          {selectedItem ? (
-            <>
-              <span className="text-[11px] font-bold truncate max-w-[105px]" style={{ color: selectedItem.category.color }}>
-                {selectedItem.category.name}
-              </span>
-              <span className="text-[16px] font-black text-white tabular-nums tracking-tight mt-0.5">
-                {formatFull(selectedItem.spent)}
-              </span>
-              <span className="text-[10px] font-medium text-[#8E8E93] tabular-nums">
-                {selectedItem.hasBudget ? `${selectedItem.budgetPercent}% hạn mức` : `${selectedItem.percentOfTotal}% tổng chi`}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="text-[10px] font-semibold text-[#8E8E93] uppercase tracking-wider">Tổng chi</span>
-              <span className="text-[16px] font-black text-white tabular-nums tracking-tight mt-0.5">{formatFull(totalSpent)}</span>
-              <span className="text-[10px] text-[#8E8E93]">{items.length} danh mục</span>
-            </>
-          )}
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className="flex flex-col w-full gap-4 pointer-events-auto"
+    >
+      {/* Tổng tiền & Thanh tỷ lệ màu */}
+      <div className="w-full px-1">
+        <div className="text-center mb-4">
+          <span className="text-[36px] font-black text-white tabular-nums tracking-tight block leading-none">
+            {formatNum(selectedItem ? selectedItem.spent : totalSpent)}₫
+          </span>
         </div>
+
+        {activeItems.length > 0 && (
+          <div className="w-full h-3 rounded-full bg-[#18181D] flex items-center gap-1 p-0.5 overflow-hidden">
+            {activeItems.map((item) => {
+              const isHighlighted = selectedId === null || selectedId === item.category.id;
+              return (
+                <button
+                  key={item.category.id}
+                  type="button"
+                  onClick={() =>
+                    setSelectedId(selectedId === item.category.id ? null : item.category.id)
+                  }
+                  style={{
+                    width: `${Math.max(6, item.percentOfTotal)}%`,
+                    backgroundColor: item.category.color,
+                    opacity: isHighlighted ? 1 : 0.25,
+                  }}
+                  className="h-full rounded-full transition-all duration-300 cursor-pointer"
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Danh sách Danh mục & Hạn mức gộp chung */}
-      <div className="w-full mt-2 rounded-[22px] bg-[#18181D]/90 border border-white/[0.08] overflow-hidden divide-y divide-white/[0.06] max-h-[34vh] overflow-y-auto no-scrollbar">
-        {items.length === 0 ? (
-          <div className="py-6 text-center text-[12px] text-[#8E8E93]">Chưa có dữ liệu chi tiêu trong tháng này</div>
-        ) : (
-          items.map((item) => {
-            const isSelected = selectedId === item.category.id;
-            const barColor = item.hasBudget
-              ? item.isExceeded100
-                ? '#FF453A'
-                : item.isWarning80
-                ? '#FF9F0A'
-                : '#34C759'
-              : item.category.color;
-            const barWidth = Math.min(100, item.hasBudget ? item.budgetPercent : item.percentOfTotal);
+      {/* Danh sách danh mục tối giản: chỉ Tên + Số tiền / Hạn mức + Thanh tiến độ */}
+      <div className="w-full space-y-2 max-h-[50vh] overflow-y-auto no-scrollbar">
+        {items.map((item) => {
+          const isSelected = selectedId === item.category.id;
+          const fillPercent = item.hasBudget
+            ? Math.min(100, item.budgetPercent)
+            : Math.min(100, item.percentOfTotal);
+          const barColor = item.isExceeded100 ? '#FF453A' : item.category.color;
 
-            return (
-              <button
-                key={item.category.id}
-                type="button"
-                onClick={() => setSelectedId(isSelected ? null : item.category.id)}
-                className={`w-full px-3.5 py-2.5 text-left transition-colors active:scale-[0.99] ${
-                  isSelected ? 'bg-white/[0.08]' : 'hover:bg-white/[0.04]'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.category.color }} />
-                    <span className="text-[13px] font-medium text-white truncate">{item.category.name}</span>
-                    {item.isExceeded100 && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-[#FF453A]/20 text-[#FF453A] text-[9px] font-bold uppercase">Vượt</span>
-                    )}
-                    {!item.isExceeded100 && item.isWarning80 && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-[#FF9F0A]/20 text-[#FF9F0A] text-[9px] font-bold">
-                        {item.budgetPercent}%
-                      </span>
-                    )}
-                  </div>
+          return (
+            <motion.button
+              key={item.category.id}
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedId(isSelected ? null : item.category.id)}
+              className={`w-full p-3.5 rounded-[20px] bg-[#18181D] border text-left transition-colors ${
+                isSelected ? 'border-white/25 bg-[#202027]' : 'border-white/[0.06]'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: item.category.color }}
+                  />
+                  <span className="text-[14px] font-semibold text-white truncate">
+                    {item.category.name}
+                  </span>
+                </div>
 
-                  <div className="flex items-baseline gap-1 text-[12px] tabular-nums flex-shrink-0">
-                    <span className="font-semibold text-white">{formatCompact(item.spent)}</span>
-                    <span className="text-[11px] text-[#8E8E93]">
-                      {item.hasBudget ? `/ ${formatCompact(item.budget)}` : `• ${item.percentOfTotal}%`}
+                <div className="flex items-baseline gap-1 text-[14px] tabular-nums flex-shrink-0">
+                  <span
+                    className={`font-bold ${
+                      item.isExceeded100 ? 'text-[#FF453A]' : 'text-white'
+                    }`}
+                  >
+                    {formatNum(item.spent)}
+                  </span>
+                  {item.hasBudget ? (
+                    <span className="text-[12px] text-[#8E8E93]">
+                      / {formatNum(item.budget)}₫
                     </span>
-                  </div>
+                  ) : (
+                    <span className="text-[12px] text-[#8E8E93]">₫</span>
+                  )}
                 </div>
+              </div>
 
-                <div className="w-full h-[3px] rounded-full bg-white/[0.07] overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: barColor }} />
-                </div>
-              </button>
-            );
-          })
-        )}
+              <div className="w-full h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${fillPercent}%`,
+                    backgroundColor: barColor,
+                  }}
+                />
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );
